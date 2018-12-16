@@ -43,7 +43,7 @@ class GameLogger:
 
     def log_path_lengths(self):
         path_lengths = map(len, self.path_list)
-        self.log_file.write((', '.join(str(x) for x in path_lengths)))
+        self.log_file.write((', '.join(str(x) for x in path_lengths))+ "\n")
 
     def record_succesor_count(self, successor_count):
         self.successor_counts.append(successor_count)
@@ -69,7 +69,7 @@ class GameLogger:
         self.log_file.write(str(sum(self.duration_list)/ float(len(self.duration_list))) + "\n")
 
     def log_duration(self):
-        self.log_file.write(', '.join(str(x) for x in self.duration_list))
+        self.log_file.write(', '.join(str(x) for x in self.duration_list) + "\n")
 
     def report_exit(self):
         self.log_file.write("urgent exit")
