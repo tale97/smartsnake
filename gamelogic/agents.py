@@ -119,7 +119,6 @@ class BFSRand(Agent):
 
             successors = self.get_succesors(cur_state)
             self.succesor_count += len(successors)
-            """
             # if takes too long to find a path, take random safe action
             if self.succesor_count >= 25000:
                 successors = self.get_succesors(original_head_pos)
@@ -131,7 +130,6 @@ class BFSRand(Agent):
                 if actions:
                     self.solve_path = [random.choice(actions)]
                 break
-            """
 
             for state, action in successors:
                 fringe.push((state, actions + [action]))

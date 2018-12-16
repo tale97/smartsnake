@@ -33,7 +33,7 @@ class Game():
 
         # set clock for fps control
         self.clock = pygame.time.Clock()
-        self.fps = 2
+        self.fps = 30
         # instantiate snake
         self.snake = Snake(self.game_display, self.block_size)
 
