@@ -33,7 +33,7 @@ class Game():
 
         # set clock for fps control
         self.clock = pygame.time.Clock()
-        self.fps = 30
+        self.fps = 20
         # instantiate snake
         self.snake = Snake(self.game_display, self.block_size)
 
@@ -46,30 +46,58 @@ class Game():
         # set window name
         pygame.display.set_caption("Snake")
 
+        self.total_path_length = 0
 
-
-    def main_loop(self, agent):
+    def main_loop(self, agent, speed):
+        self.fps = speed
         log_game = tests.GameLogger(agent.return_agent_name())
         #takes in agent as an input
         while self.running:
+
             # Handle game over situation
             if self.game_over:
+                print("---------RESULT----------")
+                print("Total path length:"),
+                print(self.total_path_length)
+                print("Total states expanded:"),
+                print(agent.succesor_count)
+
                 snake_length = len(self.snake.segments)
                 log_game.record_snake_length(snake_length)
                 log_game.normal_game_end()
                 self.game_over_dialog()
 
-            #print(self.new_game)
             if agent.new_game:
                 food_pos = (self.fruit.pos_x, self.fruit.pos_y)
                 seg_list = self.snake.segments_list()
-                state = (seg_list[0], seg_list, self.snake.x_velocity, self.snake.y_velocity)
-                log_game.start_timer()
-                agent.getpath(state, food_pos)
-                log_game.record_get_path_time()
-                log_game.record_path(agent.solve_path)
-                log_game.record_succesor_count(agent.succesor_count)
 
+                # if using IDS agent, add depth to argument
+                log_game.start_timer()
+                if agent.return_agent_name() == "IDS":
+                    state_with_depth = (seg_list[0], seg_list, self.snake.x_velocity, self.snake.y_velocity, 0)
+                    print("________________________________________________" + str(agent.return_agent_name()))
+                    agent.getpath(state_with_depth, food_pos, 0)
+                else:
+                    state = (seg_list[0], seg_list, self.snake.x_velocity, self.snake.y_velocity)
+                    print("________________________________________________"+ str(agent.return_agent_name()))
+                    agent.getpath(state, food_pos)
+
+                path_length = len(agent.solve_path)
+                self.total_path_length += path_length
+
+                # Check if agent want to end game
+                if agent.end_game:
+                    log_game.record_get_path_time()
+                    log_game.record_succesor_count(agent.succesor_count)
+                    log_game.record_path(path_length)
+                    self.game_over = True
+
+                elif agent.found_food:
+                    log_game.record_get_path_time()
+
+                else:
+                    print("Path to food not found :(")
+                    log_game.record_get_path_time()
 
             if len(agent.solve_path) > 0:
                 action = agent.solve_path.pop(0)
@@ -102,6 +130,11 @@ class Game():
                 self.snake.add_segment()
                 self.fruit.respawn(self.screen_width, self.screen_height, self.snake)
                 self.new_game = True
+                #mark total successors count
+                log_game.record_succesor_count(agent.succesor_count)
+                print("Move " + str(path_length) + " squares")
+                log_game.record_path(path_length)
+                log_game.record_eat_fruit_time()
 
             #first you draw, then you update to see changes
             self.game_display.fill(self.white)

@@ -14,6 +14,7 @@ class GameLogger:
         self.start_time = time.time()
         self.duration = 0.0
         self.duration_list = []
+        self.duration_list2 = []
         self.path_list = []
         self.successor_counts = []
         self.agent_name = info
@@ -27,27 +28,33 @@ class GameLogger:
         self.snakelength = snakelength
 
     def log_snake_length(self):
-        self.log_file.write("Snake length: " + str(self.snakelength) + "\n")
-        print("Snake length: " + str(self.snakelength) + "\n")
+        self.log_file.write("Total Snake length: " + str(self.snakelength) + "\n")
+        print("Total Snake length: " + str(self.snakelength) + "\n")
 
     def start_timer(self):
         self.start_time = time.time()
 
     def record_get_path_time(self):
         end_time = time.time()
-        duration = end_time - self.start_time
+        duration = round(end_time - self.start_time, 6)
+        print("Algorithm runs for " + str(duration) + " seconds")
         self.duration_list.append(duration)
 
-    def record_path(self, path):
-        self.path_list.append(path)
+    def record_eat_fruit_time(self):
+        end_time = time.time()
+        duration = end_time - self.start_time
+        self.duration_list2.append(duration)
+
+    def record_path(self, path_length):
+        self.path_list.append(path_length)
 
     def log_path_lengths(self):
-        path_lengths = map(len, self.path_list)
+        path_lengths = self.path_list
         self.log_file.write((', '.join(str(x) for x in path_lengths))+ "\n")
 
     def record_succesor_count(self, successor_count):
         self.successor_counts.append(successor_count)
-        print("Expanded: " + str(successor_count))
+        print("States Expanded so far: " + str(successor_count))
 
     def log_succesor_counts(self):
         self.log_file.write("Succesor counts: " + str(self.successor_counts) + "\n")
@@ -62,11 +69,14 @@ class GameLogger:
 
     def get_avg_path_length(self):
         self.log_file.write("average path length: ")
-        self.log_file.write(str((sum(map(len, self.path_list)) / float(len(self.path_list))))+ "\n")
+        if not len(self.path_list) == 0:
+            self.log_file.write(str((sum(self.path_list) / float(len(self.path_list))))+ "\n")
 
     def get_avg_duration(self):
         self.log_file.write("average duration: ")
-        self.log_file.write(str(sum(self.duration_list)/ float(len(self.duration_list))) + "\n")
+        if not len(self.path_list) == 0:
+            avg_duration = round(sum(self.duration_list)/ float(len(self.duration_list)), 6)
+            self.log_file.write(str(avg_duration) + "\n")
 
     def log_duration(self):
         self.log_file.write(', '.join(str(x) for x in self.duration_list) + "\n")
@@ -79,8 +89,7 @@ class GameLogger:
 
     def normal_game_end(self):
 
-        self.log_file.write("SUMMARY of NORMAL GAME END for "+ str(self.agent_name) + "\n")
-        # self.log_path_list()
+        self.log_file.write("SUMMARY of GAME RESULT using Agent "+ str(self.agent_name) + "\n")
         self.log_snake_length()
         self.log_succesor_counts()
         self.log_duration()
@@ -89,15 +98,7 @@ class GameLogger:
         self.get_avg_duration()
         self.log_file.close()
 
-# class ReportAgent:
-#     def __init__(self):
-#         pass
-#
-#     def report_succcesor_count(self, count):
-#         print("expanded")
-#         print(count)
 
-#RandList: pre-created random lists
 class RandList:
     def __init__(self):
         self.all_list = [self.rl1, self.rl2, self.rl3, self.rl4, self.rl5, self.rl6, self.rl7, self.rl8, self.rl9]
@@ -211,6 +212,3 @@ class RandListGenerator:
 
     def rand_list(self):
         return self.list
-
-
-

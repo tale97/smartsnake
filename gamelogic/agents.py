@@ -13,6 +13,9 @@ class Agent:
         self.screen_height = screen_height
         self.block_size = block_size
         self.succesor_count = 0
+        self.states_expanded = 0
+        self.end_game = False
+        self.found_food = False
         #self.game = Game(160, 160, 20)
 
     def get_path(self, state, food_pos):
@@ -65,85 +68,88 @@ class Agent:
 
         return (new_head, body_copy, x_vel, y_vel)
 
+    def get_succesors2(self, state, depth):
+        head_pos, segment_list, x_vel, y_vel, depth = state
+        successors = []
+        for ((new_xvel, new_yvel), action) in [((-1*self.block_size,0),"left"), ((1*self.block_size,0),"right"), ((0,-1*self.block_size),"up"), ((0,1*self.block_size), "down")]:
+            if (new_xvel*x_vel < 0) or (new_yvel*y_vel < 0):
+                pass
+            else:
+                depth += 1
+                new_snake = self.move_virtual2(head_pos, segment_list, new_xvel, new_yvel, depth)
+                if not self.is_collision(new_snake[0], new_snake[1][1:]):
+                    successors.append((new_snake, action))
+        return successors
+
+    def move_virtual2(self, head, body, x_vel, y_vel, depth):
+        """move virtual snake defined by head_pos and seg_list using x_vel and y_vel"""
+        hx, hy = head
+        next_x = hx + x_vel
+        next_y = hy + y_vel
+        new_head = (next_x, next_y)
+
+        body_copy = copy.copy(body)
+        body_copy.pop()
+        body_copy.insert(0, (next_x, next_y))
+
+        return (new_head, body_copy, x_vel, y_vel, depth)
+
     def food_found(self):
-        print("BINGO")
+        self.found_food = True
 
     def longest_path(self, start, end):
         pass
-#
-# class IDF(Agent):
-#     def DLS(self, state, action, food_pos, path, lim):
-#         use_path = path
-#         if self.at_food(state, food_pos):
-#             return path.append(action)
-#         elif lim <= 0:
-#             use_path = []
-#             return ["no sol"]
-#
-#         else:
-#             # cut_off_occured = False
-#             successors = self.get_succesors(state)
-#             for cstate, action in successors:
-#                 child_path = self.DLS(cstate, action, food_pos, lim -1)
-#                 if child_path != ["no sol"]:
-#                     use_path += (child_path)
-#
-#         return use_path
-#
-
-class BFSRand(Agent):
-
-    def return_agent_name(self):
-        return "BFSxRandom"
-
-    def getpath(self, state, food_pos):
-        original_head_pos = state
-        fringe = util.Queue()
-        expanded = []
-        fringe.push((state, []))
-
-        while not fringe.isEmpty():
-            pop = fringe.pop()
-            cur_state = pop[0]
-            actions = pop[1]
-
-            if cur_state in expanded:
-                continue
-
-            expanded.append(cur_state)
-
-            if self.at_food(cur_state, food_pos):
-                self.food_found()
-                self.solve_path = actions
-                break
-
-            successors = self.get_succesors(cur_state)
-            self.succesor_count += len(successors)
-            # if takes too long to find a path, take random safe action
-            if self.succesor_count >= 25000:
-                successors = self.get_succesors(original_head_pos)
-                actions = []
-
-                for state, action in successors:
-                    actions.append(action)
-
-                if actions:
-                    self.solve_path = [random.choice(actions)]
-                break
-
-            for state, action in successors:
-                fringe.push((state, actions + [action]))
-        self.new_game = False
 
 
+###############################################################################
 class BFS(Agent):
-
     def return_agent_name(self):
         return "BFS"
 
     def getpath(self, state, food_pos):
-        original_head_pos = state
+        self.found_food = False
         fringe = util.Queue()
+        expanded = []
+        fringe.push((state, []))
+        expansion_counter = 0
+
+        while not fringe.isEmpty():
+            pop = fringe.pop()
+            cur_state = pop[0]
+            actions = pop[1]
+
+            if cur_state in expanded:
+                continue
+            expanded.append(cur_state)
+
+            if self.at_food(cur_state, food_pos):
+                self.food_found()
+                self.solve_path = actions
+                break
+
+            successors = self.get_succesors(cur_state)
+            self.succesor_count += len(successors)
+            expansion_counter += len(successors)
+
+            if expansion_counter >= 100000:
+                print("Ended game because expanded too many states")
+                self.solve_path = ""
+                self.end_game = True
+                break
+
+            for state, action in successors:
+                fringe.push((state, actions + [action]))
+        self.new_game = False
+
+
+class DFS(Agent):
+    def return_agent_name(self):
+        return "DFS"
+
+    def getpath(self, state, food_pos):
+        self.found_food = False
+        #original_head_pos = state
+        fringe = util.Stack()
         expanded = []
         fringe.push((state, []))
 
@@ -165,39 +171,9 @@ class BFS(Agent):
             successors = self.get_succesors(cur_state)
             self.succesor_count += len(successors)
 
-            # if takes too long to find a path, take random safe action
-
-            if self.succesor_count >= 25000:
-                successors = self.get_succesors(original_head_pos)
-                actions = []
-
-                for state, action in successors:
-                    actions.append(action)
-
-                if actions:
-                    self.solve_path = [random.choice(actions)]
-                break
-
             for state, action in successors:
                 fringe.push((state, actions + [action]))
         self.new_game = False
-
-
-
-class SmartRandom(Agent):
-    def return_agent_name(self):
-        return "SmartRandom"
-
-    def getpath(self, state, food_pos):
-        successors = self.get_succesors(state)
-        actions = []
-
-        for state, action in successors:
-            actions.append(action)
-            print("possible actions:"),
-            print(actions)
-        if actions:
-            self.solve_path = [random.choice(actions)]
 
 
 class Random(Agent):
@@ -216,8 +192,20 @@ class Random(Agent):
         elif dy > 0:
             actions.remove("up")
         self.solve_path = [random.choice(actions)]
-        print("DEBUG"),
-        print(self.solve_path)
+
+
+class SmartRandom(Agent):
+    def return_agent_name(self):
+        return "SmartRandom"
+
+    def getpath(self, state, food_pos):
+        successors = self.get_succesors(state)
+        actions = []
+
+        for state, action in successors:
+            actions.append(action)
+        if actions:
+            self.solve_path = [random.choice(actions)]
 
 
 class Greedy(Agent):
@@ -237,19 +225,146 @@ class Greedy(Agent):
         self.solve_path = [best_action]
 
 
-
-class Astar(Agent):
+class BFSRand(Agent):
     def return_agent_name(self):
-        return "Astar"
+        return "BFSxRandom"
 
     def getpath(self, state, food_pos):
+        self.found_food = False
         original_head_pos = state
-        fringe = util.PriorityQueueWithFunction(self.priority_function)
+        fringe = util.Queue()
+        expanded = []
+        fringe.push((state, []))
+        expansion_counter = 0
+        self.states_expanded = 0
+
+        while not fringe.isEmpty():
+            node = fringe.pop()
+            cur_state = node[0]
+            actions = node[1]
+
+            if cur_state in expanded:
+                continue
+            expanded.append(cur_state)
+
+            #check if found food
+            if self.at_food(cur_state, food_pos):
+                self.food_found()
+                self.solve_path = actions
+                break
+
+            successors = self.get_succesors(cur_state)
+            self.succesor_count += len(successors)
+            expansion_counter += len(successors)
+            self.states_expanded += len(successors)
+
+            # if takes too long to find a path, take random safe action
+            if expansion_counter >= 15000:
+                print("Picking a Random save move...")
+                successors = self.get_succesors(original_head_pos)
+                actions = []
+                for state, action in successors:
+                    actions.append(action)
+                if actions:
+                    self.solve_path = [random.choice(actions)]
+                break
+
+            for state, action in successors:
+                fringe.push((state, actions + [action]))
+        self.new_game = False
+
+
+class BFS_DFS(Agent):
+    def return_agent_name(self):
+        return "BFS_DFS"
+
+    def getpath(self, state, food_pos): #) = self.food_pos):
+        self.found_food = False
+        original_head_pos = state
+        fringe = util.Queue()
         expanded = []
         fringe.push((state, []))
         total_successors = 0
-        ts2 = 0
-        start = time.time()
+        counter = 0
+
+        while not fringe.isEmpty():
+            pop = fringe.pop()
+            cur_state = pop[0]
+            actions = pop[1]
+
+            if cur_state in expanded:
+                continue
+
+            expanded.append(cur_state)
+
+            if self.at_food(cur_state, food_pos):
+                self.food_found()
+                self.solve_path = actions
+                break
+
+            successors = self.get_succesors(cur_state)
+            self.succesor_count += len(successors)
+            total_successors += len(successors)
+            counter += len(successors)
+
+            if counter >= 15000:
+                print("__DFS__")
+                counter = 0
+                print("expanded"),
+                print(total_successors)
+
+            # if takes too long to find a path, use DFS
+            if total_successors >= 25000:
+                print("Switching to DFS")
+                fringe = util.Stack()
+                expanded = []
+                fringe.push((original_head_pos, []))
+
+                while not fringe.isEmpty():
+                    pop = fringe.pop()
+                    cur_state = pop[0]
+                    actions = pop[1]
+
+                    if cur_state in expanded:
+                        continue
+
+                    expanded.append(cur_state)
+
+                    if self.at_food(cur_state, food_pos):
+                        self.food_found()
+                        self.solve_path = actions
+                        break
+
+                    successors = self.get_succesors(cur_state)
+                    self.succesor_count += len(successors)
+                    total_successors += len(successors)
+                    counter += len(successors)
+
+                    for state, action in successors:
+                        fringe.push((state, actions + [action]))
+                self.new_game = False
+                break
+
+            for state, action in successors:
+                fringe.push((state, actions + [action]))
+        self.new_game = False
+
+
+class IDS(Agent):
+    def return_agent_name(self):
+        return "IDS"
+
+    def getpath(self, state, food_pos, max_depth):
+        self.found_food = False
+        original_state = state
+        fringe = util.Stack()
+        expanded = []
+        fringe.push((state, []))
+        total_successors = 0
+        found_food = False
+        counter = 0
+
+        # remove from stack
         while not fringe.isEmpty():
             pop = fringe.pop()
             cur_state = pop[0]
@@ -259,42 +374,37 @@ class Astar(Agent):
                 continue
             expanded.append(cur_state)
 
+            # if not goal state
             if self.at_food(cur_state, food_pos):
-                print("BINGO")
+                self.food_found()
                 self.solve_path = actions
+                found_food = True
                 break
 
-            successors = self.get_succesors(cur_state)
-            total_successors += len(successors)
-            ts2 += len(successors)
+            # if not at max depth
+            if not (cur_state[4] >= max_depth):
+                successors = self.get_succesors2(cur_state, cur_state[4])
+                total_successors += len(successors)
+                self.succesor_count += len(successors)
+                counter += len(successors)
 
-            if ts2 >= 25000:
-                print(time.time() - start)
-                print("expanded"),
-                print(total_successors)
-                ts2 = 0
-
-            # if takes too long to find a path, take random safe action
-            if total_successors >= 50000:
-                successors = self.get_succesors(original_head_pos)
-                actions = []
+                if counter >= 100000:
+                    print("TOO MANY STATES")
+                    self.solve_path = ""
+                    self.end_game = True
+                    break
 
                 for state, action in successors:
-                    actions.append(action)
-                print("safe actions:"),
-                print(actions)
-                if actions:
-                    self.solve_path = [random.choice(actions)]
+                    fringe.push((state, actions + [action]))
+
+            if counter >= 100000:
+                print("TOO MANY STATES")
+                self.solve_path = ""
+                self.end_game = True
                 break
 
-            for state, action in successors:
-                fringe.push((state, actions + [action]))
-        print("TOTAL EXPANDED:"),
-        print(total_successors)
-        self.new_game = False
+        if not self.found_food and not (max_depth >= 200):
+            max_depth += 1
+            self.getpath(original_state, food_pos, max_depth)
 
-    def priority_function(self, state):
-        #fruit = (self.fruit.pos_y, self.fruit.pos_x)
-        item, action = state
-        game.priofunc_astar(game, state)
-        #return util.manhattanDistance(item[0], fruit)
+        self.new_game = False
