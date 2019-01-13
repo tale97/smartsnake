@@ -1,7 +1,7 @@
 ## CS182 Final project: Smart Snake
 Inspired by a repo by Tales Carlos de Pádua
 
-Demonstration of various search agent:
+Demonstration of various search agent used to guide the snake to eat food in the classic snake game:
 
 Breadth-First Search Agent using Fruit List 2. Final length: 26. Path length: 132
 
